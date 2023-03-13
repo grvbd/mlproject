@@ -15,16 +15,15 @@ from dataclasses import dataclass
 @dataclass
 class DataTransformationConfig:
     preprocessor_obj_file_path:str = os.path.join('artifact','preprocessor.pkl')
-    # transformed_train_path = 
 
 class DataTransformation:
     def __init__(self):
-        self.data_tranformation_config = DataTransformationConfig()
+        self.data_transformation_config = DataTransformationConfig()
 
     def get_data_transformer_object(self):
         try:
             '''
-            This function is responsible for data traansformation
+            This function is responsible for data transformation
             '''
             logging.info('Data Transformation Phase Started')
             num_columns = ["writing_score", "reading_score"]
@@ -37,24 +36,28 @@ class DataTransformation:
             logging.info(f"Categorical columns: {cat_columns}")
             logging.info(f"Numerical columns: {num_columns}")
 
+            logging.info(f"Numerical pipeline initialising")
             num_pipeline = Pipeline(
                 steps=[
                 ('imputer',SimpleImputer(strategy='median')),
                 ('scaler',StandardScaler())
                 ])
-
+            
+            logging.info(f"Categorical pipeline initialising")
             cat_pipeline = Pipeline(
                 steps=[
                 ('imputer',SimpleImputer(strategy='most_frequent')),
                 ('encoder',OneHotEncoder()),
-                ('scaler',StandardScaler())
+                ('scaler',StandardScaler(with_mean=False))
                 ])  
             
+            logging.info(f"Column Transformer initialising")
             preprocessor = ColumnTransformer([
                 ('num_pipeline',num_pipeline,num_columns),
                 ('cat_pipeline',cat_pipeline,cat_columns)
                 ])
             
+            logging.info(f"Returning preprocessor object")
             return preprocessor
             
         except Exception as e:
@@ -62,6 +65,7 @@ class DataTransformation:
         
     def initiate_data_transformation(self,train_path,test_path):
         try:
+            logging.info('****************************************Data Transformation Phase Started****************************************')
             train_df = pd.read_csv(train_path)
             test_df = pd.read_csv(test_path)
             logging.info("Reading train and test dataset completed")
@@ -69,20 +73,30 @@ class DataTransformation:
             logging.info("Obtaining preprocessing object")
             preprocessor = self.get_data_transformer_object()
             
+            logging.info(f"Creating input features and target feature")
             target_column_name = 'math_score'
             input_features_train_df = train_df.drop(target_column_name,axis=1)
             target_feature_train_df = train_df[target_column_name]
-            input_features_test_df = test_df.drop(columns=[target_column_name],axis=1)
+            input_features_test_df = test_df.drop(target_column_name,axis=1)
             target_feature_test_df = test_df[target_column_name]
 
             logging.info(f"Applying preprocessing object on training dataframe and testing dataframe")
-            input_feature_train_arr = preprocessor.fit_transform(input_features_train_df)
-            input_feature_test_arr = preprocessor.transform(input_features_test_df)
+            input_features_train_arr = preprocessor.fit_transform(input_features_train_df)
+            input_features_test_arr = preprocessor.transform(input_features_test_df)
 
-            train_arr = np.c_[input_feature_train_arr,np.array(target_feature_train_df)]
-            test_arr = np.c_[input_feature_test_arr, np.array(target_feature_test_df)]
+            logging.info(f"Concatenating input features and target features")
+            train_arr = np.c_[input_features_train_arr,np.array(target_feature_train_df)]
+            test_arr = np.c_[input_features_test_arr, np.array(target_feature_test_df)]
             
+            logging.info(f"Saving preprocessing object")
             save_object(file_path=self.data_transformation_config.preprocessor_obj_file_path,obj=preprocessor)
+
+            logging.info(f"Created train array, Test array & Preprocessor file path: {self.data_transformation_config.preprocessor_obj_file_path}")
+            logging.info('****************************************Data Transformation Phase Completed****************************************')
+            return(
+                train_arr,
+                test_arr,
+                self.data_transformation_config.preprocessor_obj_file_path)
 
         except Exception as e:
             raise CustomException(e,sys)

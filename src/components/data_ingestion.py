@@ -17,20 +17,21 @@ class DataIngestion:
         self.data_ingestion_config=DataIngestionConfig()
 
     def initiate_data_ingestion(self):
-        logging.info('Data Ingestion Phase Started')
         try:
+            logging.info(f'****************************************Data Ingestion Phase Started****************************************')
+            
+            logging.info('Reading the raw dataset as dataframe')
             df = pd.read_csv('D:\DS\Workouts\Krish Naik\DS_IS\mlproject\data\stud.csv')
-
-            logging.info('Read the dataset as dataframe')
+            
             dir_path = os.path.dirname(self.data_ingestion_config.raw_data_path)
-
+            
             os.makedirs(dir_path, exist_ok=True)
             df.to_csv(self.data_ingestion_config.raw_data_path,index=False,header=True)
             logging.info('Saved raw data')
-
+            
             logging.info('Train test split initiated')
             train_df,test_df = train_test_split(df,test_size=0.2,random_state=42)
-
+            
             dir_path = os.path.dirname(self.data_ingestion_config.train_data_path)
             os.makedirs(dir_path, exist_ok=True)
             train_df.to_csv(self.data_ingestion_config.train_data_path,index=False,header=True)
@@ -40,13 +41,11 @@ class DataIngestion:
             os.makedirs(dir_path, exist_ok=True)
             test_df.to_csv(self.data_ingestion_config.test_data_path,index=False,header=True)
             logging.info('Saved test data')
-
-            logging.info('Data Ingestion Phase Completed')
-
+            logging.info(f"Train data path: {self.data_ingestion_config.train_data_path}, Test data path: {self.data_ingestion_config.test_data_path}")
+            logging.info('****************************************Data Ingestion Phase Completed****************************************')
             return (
                 self.data_ingestion_config.train_data_path,
-                self.data_ingestion_config.test_data_path,
-            )
+                self.data_ingestion_config.test_data_path)
         
         except Exception as e:
             raise CustomException(e,sys)
