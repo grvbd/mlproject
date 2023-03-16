@@ -11,6 +11,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 from dataclasses import dataclass
+from src.utils import load_yaml
 from src.exception import CustomException
 from src.logger import logging
 
@@ -35,16 +36,17 @@ class ModelTrainer:
                 test_array[:,-1])
             
             models = {
-                "Random Forest": RandomForestRegressor(),
-                "Decision Tree": DecisionTreeRegressor(),
-                "Gradient Boosting": GradientBoostingRegressor(),
-                "Linear Regression": LinearRegression(),
-                "K-Neighbors Classifier": KNeighborsRegressor(),
-                "XGBClassifier": XGBRegressor(),
-                "CatBoosting Classifier": CatBoostRegressor(verbose=False)}
+                "RandomForest": RandomForestRegressor(),
+                "DecisionTree": DecisionTreeRegressor(),
+                "GradientBoosting": GradientBoostingRegressor(),
+                "LinearRegression": LinearRegression(),
+                "KNN": KNeighborsRegressor(),
+                "XGB": XGBRegressor(),
+                "CatBoosting": CatBoostRegressor(verbose=False)}
             
             logging.info('Evaluating the models')
-            model_report:dict = evaluate_models(X_train,y_train,X_test,y_test,models)
+            params = load_yaml(file_path=r'configs/params.yaml')
+            model_report:dict = evaluate_models(X_train,y_train,X_test,y_test,models,params)
 
             logging.info('Get the best model score from dict')
             best_model_score = max(sorted(model_report.values()))
